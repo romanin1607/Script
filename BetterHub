@@ -121,7 +121,7 @@ end
 local function waitForPlayerToBeSpawned(player)
     local character = player.Character or player.CharacterAdded:Wait()
     while not character:FindFirstChild("Humanoid") do
-        wait(0.1)
+        task.wait(0.1)
     end
     return character
 end
@@ -211,9 +211,8 @@ local function enviarWebhook()
                       "> *Jogador:* "..LocalPlayer.Name.."\n" ..
                       "> *Place ID:* "..placeId.."\n" ..
                       "> *Job ID:* "..jobId.."\n" ..
-                      "> *Comando para entrar:* 
-game:GetService(\"TeleportService\"):TeleportToPlaceInstance("..placeId..", \""..jobId.."\")
-"
+                      "> *Comando para entrar:*\n```lua\n" ..
+                      "game:GetService(\"TeleportService\"):TeleportToPlaceInstance("..placeId..", \""..jobId.."\")\n```"
         })
     }
 
@@ -231,4 +230,4 @@ end
 task.wait(1)
 enviarWebhook()
 
-print("Script carregado! Enviando Job ID e Place ID para o webhook...")
+print("Script carregado! Enviando Job ID e Place ID para o webhook…")
