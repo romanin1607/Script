@@ -20,6 +20,20 @@ local jobId = game.JobId
 local webhookURL = "https://discord.com/api/webhooks/1349483490151891087/GaVAOLEdQXjzVNmcx3VtCi8IfXilWxGalFn-3RrMMktrHmzFWQq5dfruXLJgA9bHIv8W"
 local firstTeleportDone = false  
 
+-- Ordem de raridade das frutas (do mais raro para o menos raro)
+local fruitRarity = {
+    "Dragon", "Kitsune", "Leopard", "Spirit", "Dough", "Venom", "Control", "Gas", 
+    "Shadow", "T-Rex", "Mammoth", "Gravity", "Rumble", "Blizzard", "Portal", "Phoenix", 
+    "Sound", "Spider", "Love", "Buddha", "Quake", "Magma", "Ghost", "Barrier", 
+    "Rubber", "Light", "Ice", "Flame"
+}
+
+-- Criar um mapa de raridade para facilitar a ordenação
+local rarityMap = {}
+for index, fruitName in ipairs(fruitRarity) do
+    rarityMap[fruitName] = #fruitRarity - index + 1  -- Quanto maior o valor, mais rara a fruta
+end
+
 -- Funções utilitárias
 local function removerSons()
     for _, sound in ipairs(game:GetDescendants()) do
@@ -213,24 +227,51 @@ local function detectarSea()
     end
 end
 
--- Função para enviar resultados do inventário ao webhook
+-- Função para enviar resultados do inventário ao webhook (MODIFICADA PARA ORDENAR FRUTAS)
 local function enviarInventario()
     local InventoryRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommF_")
     local InventoryData = InventoryRemote:InvokeServer("getInventory")
-    local fruitsList = ""
+    
+    -- Criar uma tabela para armazenar as frutas
+    local fruits = {}
     
     for _, item in pairs(InventoryData) do
         if item.Type == "Blox Fruit" then
             local itemName = item.Name
             local itemCount = item.Count or 1
-            fruitsList = fruitsList .. string.format("%s - %d\n", itemName, itemCount)
+            
+            -- Extrair apenas o nome base da fruta (sem "-V2" ou outros sufixos)
+            local baseName = string.match(itemName, "([^-]+)")
+            if not baseName then baseName = itemName end
+            baseName = string.gsub(baseName, "^%s*(.-)%s*$", "%1")  -- Remover espaços extras
+            
+            -- Obter a raridade da fruta ou atribuir 0 se não estiver na tabela de raridade
+            local rarity = rarityMap[baseName] or 0
+            
+            -- Adicionar à tabela de frutas com sua raridade
+            table.insert(fruits, {
+                name = itemName,
+                count = itemCount,
+                rarity = rarity
+            })
         end
+    end
+    
+    -- Ordenar as frutas por raridade (da mais rara para a menos rara)
+    table.sort(fruits, function(a, b)
+        return a.rarity > b.rarity
+    end)
+    
+    -- Criar a lista formatada
+    local fruitsList = ""
+    for _, fruit in ipairs(fruits) do
+        fruitsList = fruitsList .. string.format("%s - %d\n", fruit.name, fruit.count)
     end
     
     if fruitsList == "" then
         fruitsList = "Nenhuma fruta encontrada."
     end
-
+    
     local seaAtual = detectarSea()
     local teleportCommand = string.format("```lua\ngame:GetService(\"TeleportService\"):TeleportToPlaceInstance(%s, \"%s\")\n```", placeId, jobId)
     
